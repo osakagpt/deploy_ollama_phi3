@@ -5,8 +5,8 @@
     "version": "0.2.0",
     "configurations": [
       {
-        "name": "Python: FastAPI",
-        "type": "python",
+        "name": "phi-3 chatbot using ollama server",
+        "type": "debugpy",
         "python": "/usr/local/bin/python",
         "request": "launch",
         "module": "uvicorn",

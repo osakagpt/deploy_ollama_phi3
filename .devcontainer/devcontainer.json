@@ -1,44 +1,44 @@
 {
-    "name": "Sample App For PHI3",
-    "context": "../app",
-    "dockerFile": "../app/Dockerfile",
-    "runArgs": ["--name", "phi3_sample_app_container"],
-    "workspaceFolder": "/app",
-    "workspaceMount": "source=${localWorkspaceFolder}/app,target=/app,type=bind",
-    "forwardPorts": [
-      8000
-    ],
-    "containerEnv": {
-      "TZ": "Asia/Tokyo"
-    },
-    "overrideCommand": true,
-    "customizations": {
-      "vscode": {
-        "extensions": [
-          "ms-azuretools.vscode-docker",
-          "ms-python.python",
-          "ms-python.vscode-pylance",
-          "ms-python.flake8",
-          "ms-python.black-formatter",
-          "github.copilot",
-          "github.copilot-chat"
-        ],
-        "settings": {
-          "terminal.integrated.profiles.linux": {
-            "bash": {
-              "path": "/bin/bash"
-            }
-          },
-          "terminal.integrated.defaultProfile.linux": "bash",
-          "python.linting.flake8Enabled": true,
-          "python.formatting.provider": "black",
-          "[python]": {
-            "editor.formatOnSave": true,
-            "editor.codeActionsOnSave": {
-              "source.organizeImports": true
-            }
+  "name": "phi-3 chatbot using ollama server",
+  "dockerComposeFile": "../compose.yml",
+  "service": "app",
+  "workspaceFolder": "/app",
+  "forwardPorts": [
+    8000
+  ],
+  "containerEnv": {
+    "TZ": "Asia/Tokyo"
+  },
+  "overrideCommand": true,
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.vscode-pylance",
+        "ms-python.flake8",
+        "ms-python.black-formatter",
+        "github.copilot",
+        "github.copilot-chat",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "[python]": {
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
           }
         }
       }
     }
   }
+}

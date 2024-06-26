@@ -1,0 +1,35 @@
+version: '3.8'
+
+networks:
+  ollama_network:
+    driver: bridge    # Specify the network driver (bridge is the default)
+
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - ollama_network
+    depends_on:
+      - ollama
+
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama/   # Persist Ollama data across container restarts
+    networks:
+      - ollama_network
+
+volumes:
+  ollama_data:

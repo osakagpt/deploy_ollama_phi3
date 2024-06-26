@@ -1,0 +1,1 @@
+Set Phi-3-mini-4k-instruct-q4.gguf in the ollama directory before building images.

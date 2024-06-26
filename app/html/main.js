@@ -18,20 +18,34 @@ function submitData() {
         "user_input": userInput
     };
 
-
     // Make a fetch request
-    fetch('http://3.93.107.253:80', {
+    fetch('/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
-    .then(data => {
-        // Display the response in the label
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
         const responseLabel = document.getElementById('responseLabel');
-        responseLabel.textContent = `${data.output}`;
+        
+        function readStream() {
+            return reader.read().then(({ done, value }) => {
+                if (done) {
+                    return;
+                }
+                const chunk = decoder.decode(value, { stream: true });
+                responseLabel.textContent += chunk;
+                return readStream();
+            });
+        }
+        return readStream();
     })
     .catch(error => {
         console.error('Error:', error);

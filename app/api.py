@@ -1,15 +1,21 @@
-from base64 import b64decode
+from contextlib import asynccontextmanager
+import json
 import logging
 import os
-import json
-from typing import Iterable, List, TypedDict
+from typing import AsyncIterable
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-import requests
-from starlette.middleware.cors import CORSMiddleware
+import httpx
+
+
+# info
+app_name = "phi3 chatbot"
+ollama_url = "http://ollama:11434"
+model_name = "finetuned-phi3:latest"
+timeout_sec = 600.0
 
 #
 # Logger
@@ -18,27 +24,69 @@ logger = logging.getLogger("uvicorn")
 
 
 #
-# FastAPI app instance
+# FastAPI startup and shutdown hook
 # ==============================================================================
-app = FastAPI()
-app.mount("/html", StaticFiles(directory="html"), name="html")
-# app.mount("/assets", StaticFiles(directory="html/dist/assets"), name="assets")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # write startup event here
+    startup()
+    yield
+    # write shutdown event here
 
 
-#
-# FastAPI startup hook
-# ==============================================================================
-@app.on_event("startup")
-async def startup():
+def startup():
+    endpoint = f"{ollama_url}/api/tags"
+    try:
+        response = httpx.get(endpoint, timeout=timeout_sec)
+        if response.status_code == 200:
+            models = response.json()["models"]
+            if model_name in [model["name"] for model in models]:
+                return
+        else:
+            print("Connection to Ollama server failed.")
+            return
+    except Exception as ex:
+        print(ex)
+        return
+
+    endpoint = f"{ollama_url}/api/create"
+    json_data = {"name": model_name, "path": "/root/Modelfile"}
+    try:
+        response = httpx.post(endpoint, json=json_data, timeout=timeout_sec)
+        if response.status_code == 200:
+            print("Model created successfully.")
+        else:
+            print("Model creation failed.")
+    except Exception as ex:
+        print(ex)
+
+    # 空打ちするとモデルがロードされる
+    endpoint = f"{ollama_url}/api/chat"
+    json_data = {
+        "model": model_name,
+    }
+    try:
+        response = httpx.post(endpoint, json=json_data, timeout=timeout_sec)
+        if response.status_code == 200:
+            print("phi3 model loaded successfully.")
+        else:
+            print("phi3 model failed to be loaded.")
+    except Exception as ex:
+        print(ex)
+
     logger.info("Start chat bot api server.")
 
 
-#
-# FastAPI shutdown hook
-# ==============================================================================
-@app.on_event("shutdown")
-async def shutdown():
+def shutdown():
     logger.info("Shutdown chat bot api server.")
+
+
+#
+# FastAPI app instance
+# ==============================================================================
+app = FastAPI(title=app_name, lifespan=lifespan)
+app.mount("/html", StaticFiles(directory="html"), name="html")
+# app.mount("/assets", StaticFiles(directory="html/dist/assets"), name="assets")
 
 
 #
@@ -58,24 +106,19 @@ class PostRequestPayload(BaseModel):
 
 
 @app.post("/")
-async def ask(payload: PostRequestPayload):
+async def chat(payload: PostRequestPayload) -> StreamingResponse:
     # Infer with prompt without any additional input
-    url = "http://ollama:11434/api/generate"
-    user_inputs = {
-        "model": "phi3",
-        "prompt": payload.user_input,
-    }
-    output = ""
-    try:
-        response = requests.post(url, data=json.dumps(user_inputs))
-        if response.ok:
-            resp_list = response.text.split("\n")[:-1]
-            for resp in resp_list:
-                j = json.loads(resp)
-                output += j["response"]
-        else:
-            output += "ごめんよくわからかった.もう一回言って"
-    except Exception as ex:
-        print(ex)
-        output += "接続できてないよ"
-    return {"output": output}
+    endpoint = f"{ollama_url}/api/chat"
+    user_inputs = {"model": "finetuned-phi3", "messages": [{"role": "user", "content": payload.user_input}]}
+    return StreamingResponse(event_generator(endpoint, user_inputs), media_type="text/event-stream")
+
+
+async def event_generator(url: str, data: dict) -> AsyncIterable[str]:
+    async with httpx.AsyncClient() as client:
+        async with client.stream("POST", url, json=data, timeout=60.0) as response:
+            async for chunk in response.aiter_bytes():
+                ch = json.loads(chunk.decode("utf-8"))
+                if ch["done"]:
+                    break
+                print(ch["message"]["content"])
+                yield ch["message"]["content"]

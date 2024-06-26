@@ -1,7 +1,7 @@
 import multiprocessing
 import os
 
-name = "MyChatbotAPI"
+name = "phi3 chatbot using ollama server"
 wsgi_app = "api:app"
 bind = "0.0.0.0:8000"
 debug = False
