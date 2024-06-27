@@ -1,1 +1,7 @@
-Set Phi-3-mini-4k-instruct-q4.gguf in the ollama directory before building images.
+# 雑感
+- GiBオーダーのモデルをどう管理するのか問題
+    - githubはきびしい。LFSの無料枠はないにひとしい。
+    - 現状huggingface hubを利用している。huggingface hubは実質gitレポジトリだが、LLMの管理専用みたいなところあるのでLFSは強い。プライベートレポジトリもある。ollamaとの相性は微妙。huggingface-cli というコマンド(アクセストークンで認証)が用意されてるがCLIは微妙。gitコマンド(公開鍵方式で認証)でもいける。
+    - ollama hub今回使ってみた。プライベートレポジトリはない。ollamaコマンド(ssh経由)でpushやpullなど操作できる。ただし挙動はまだ全く安定しない。バグも多そう。
+    - ローカルで動かすだけなら巨大ストレージ用意してファイルシステム経由でアクセスするのが一番よい。何も考えなくていい。ローカルでファインチューニングするならgitレポジトリはさすがに作ったほうがよい。
+    - ファインチューニングをgoogle colabでするならモデルはgoogle driveに置いておいて、適宜マウントするのがよい。google driveはローカルにもマウントできるので驚くほど便利。有料プランで100GB確保できる。
